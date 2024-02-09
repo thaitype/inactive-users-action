@@ -17,6 +17,7 @@ async function run() {
     , outputDir = getRequiredInput('outputDir')
     , organization = getRequiredInput('organization')
     , maxRetries = getRequiredInput('octokit_max_retries')
+    , timeZone = core.getInput('timezone') ?? 'Etc/UTC'
   ;
 
   let fromDate;
@@ -30,7 +31,7 @@ async function run() {
   // Ensure that the output directory exists before we our limited API usage
   await io.mkdirP(outputDir)
 
-  const octokit = githubClient.create(token, maxRetries)
+  const octokit = githubClient.create(token, maxRetries, timeZone)
     , orgActivity = new OrganizationActivity(octokit)
   ;
 

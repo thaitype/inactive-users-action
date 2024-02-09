@@ -28,7 +28,11 @@ inputs:
   octokit_max_retries:
     description: Maximum number of retires when using the Octokit REST API
     required: true
-    default: 15
+    default: 	Etc/UTC
+
+  timezone:
+    description: 'The timezone to use for the report, defaults to UTC, https://docs.github.com/en/rest/using-the-rest-api/timezones-and-the-rest-api?apiVersion=2022-11-28'
+    default: 
 
 runs:
   using: node12

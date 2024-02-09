@@ -19,6 +19,10 @@ on:
         description: Debug output
         default: 'false'
 
+      timezone:
+        description: The timezone to use for the report
+        default: 'Asia/Bangkok'
+
 jobs:
   analyze:
     name: Analyze Organization Activity
@@ -39,6 +43,7 @@ jobs:
           organization: ${{ github.event.inputs.organization }}
           activity_days: ${{ github.event.inputs.activity_days }}
           debug: ${{ github.event.inputs.debug }}
+          timezone: ${{ github.event.inputs.timezone }}
  
       - name: Attach Artifacts
         uses: actions/upload-artifact@v2

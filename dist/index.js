@@ -24,6 +24,7 @@ async function run() {
     , outputDir = getRequiredInput('outputDir')
     , organization = getRequiredInput('organization')
     , maxRetries = getRequiredInput('octokit_max_retries')
+    , timeZone = core.getInput('timezone') ?? 'Etc/UTC'
   ;
 
   let fromDate;
@@ -37,7 +38,7 @@ async function run() {
   // Ensure that the output directory exists before we our limited API usage
   await io.mkdirP(outputDir)
 
-  const octokit = githubClient.create(token, maxRetries)
+  const octokit = githubClient.create(token, maxRetries, timeZone)
     , orgActivity = new OrganizationActivity(octokit)
   ;
 
@@ -10013,10 +10014,11 @@ const RetryThrottlingOctokit = Octokit.plugin(throttling, retry);
 
 //TODO could apply the API endpoint (i.e. support GHES)
 
-module.exports.create = (token, maxRetries) => {
+module.exports.create = (token, maxRetries, timeZone) => {
   const MAX_RETRIES = maxRetries ? maxRetries : 3
 
   const octokit =new RetryThrottlingOctokit({
+    timeZone: timeZone,
     auth: `token ${token}`,
 
     throttle: {
