@@ -1,5 +1,6 @@
-// const github = require('@actions/github')
-//   , core = require('@actions/core')
+// @ts-check
+
+const { log } = require('console');
 const fs = require('fs')
   , path = require('path')
   , core = require('@actions/core')
@@ -18,6 +19,7 @@ async function run() {
     , organization = getRequiredInput('organization')
     , maxRetries = getRequiredInput('octokit_max_retries')
     , timeZone = core.getInput('timezone') ?? 'Etc/UTC'
+    , logUser = core.getInput('log_user') ?? undefined
   ;
 
   let fromDate;
@@ -32,7 +34,7 @@ async function run() {
   await io.mkdirP(outputDir)
 
   const octokit = githubClient.create(token, maxRetries, timeZone)
-    , orgActivity = new OrganizationActivity(octokit)
+    , orgActivity = new OrganizationActivity(octokit, logUser)
   ;
 
   console.log(`Attempting to generate organization user activity data, this could take some time...`);

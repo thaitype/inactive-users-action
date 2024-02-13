@@ -11,7 +11,7 @@ module.exports = class RepositoryActivity {
     this._pullRequestActivity = new PullRequestActivity(octokit)
   }
 
-  async getActivity(repo, since) {
+  async getActivity(repo, since, logUser) {
     const owner = repo.owner
       , name = repo.name
       , fullName = repo.full_name
@@ -28,7 +28,7 @@ module.exports = class RepositoryActivity {
     const commits = await commitActivity.getCommitActivityFrom(owner, name, since);
     data[UserActivityAttributes.COMMITS] = commits[fullName];
 
-    const issues = await issueActivity.getIssueActivityFrom(owner, name, since)
+    const issues = await issueActivity.getIssueActivityFrom(owner, name, since, logUser)
     data[UserActivityAttributes.ISSUES] = issues[fullName];
 
     const issueComments = await issueActivity.getIssueCommentActivityFrom(owner, name, since);

@@ -1,4 +1,29 @@
+const core = require('@actions/core');
+const fs = require('fs')
+  , path = require('path')
 const util = require('../dateUtil');
+
+/**
+ * Hotfix func to debug some user
+ * @param {string|undefined} logUser 
+ * @param {string|undefined} login 
+ * @param {any} issue 
+ * @returns 
+ */
+function logIssueActivity(logUser, login, issue) {
+  if (logUser === undefined) return;
+  if(logUser !== login) return;
+  console.log(`Log Issue ${issue.title} by ${login}`);
+  // TODO: Hard code to get outdir from github actions inputs
+  const outputDir = core.getInput('outputDir', {required: true});
+
+  const file = path.join(outputDir, 'issue_activity.log');
+  fs.appendFileSync(file, `${login} - ${issue.title}\n`);
+  fs.appendFileSync(file, `Issue: ${JSON.stringify(issue, null, 2)}`);
+
+   // Expose the output log user issue activity file
+   core.setOutput('issue_activity_log', file);
+}
 
 module.exports = class IssueActivity {
 
@@ -9,7 +34,7 @@ module.exports = class IssueActivity {
     this._octokit = octokit;
   }
 
-  getIssueActivityFrom(owner, repo, since) {
+  getIssueActivityFrom(owner, repo, since, logUser) {
     const from = util.getFromDate(since)
       , repoFullName = `${owner}/${repo}`
     ;
@@ -27,6 +52,8 @@ module.exports = class IssueActivity {
       issues.forEach(issue => {
         if (issue.user && issue.user.login) {
           const login = issue.user.login;
+
+          logIssueActivity(logUser, login, issue);
 
           if (!users[login]) {
             users[login] = 1;

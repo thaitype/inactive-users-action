@@ -1,3 +1,4 @@
+const { Octokit } = require('@octokit/rest');
 const Organization = require('./github/Organization')
   , RepositoryActivity = require('./github/RepositoryActivity')
   , UserActivity = require('./UserActivity')
@@ -6,9 +7,14 @@ const Organization = require('./github/Organization')
 
 module.exports = class OrganizationUserActivity {
 
-  constructor(octokit) {
+  /**
+   * @param {Octokit} octokit 
+   * @param {string | undefined} logUser 
+   */
+  constructor(octokit, logUser) {
     this._organization = new Organization(octokit);
     this._repositoryActivity = new RepositoryActivity(octokit);
+    this._logUser = logUser;
   }
 
   get organizationClient() {
@@ -28,7 +34,7 @@ module.exports = class OrganizationUserActivity {
 
     const activityResults = {};
     for(let idx = 0; idx< repositories.length; idx++) {
-      const repoActivity = await self.repositoryClient.getActivity(repositories[idx], since);
+      const repoActivity = await self.repositoryClient.getActivity(repositories[idx], since, this._logUser);
       Object.assign(activityResults, repoActivity);
     }
 
