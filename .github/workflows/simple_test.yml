@@ -23,6 +23,10 @@ on:
         description: The timezone to use for the report
         default: 'Asia/Bangkok'
 
+      log_user:
+        description: The user to log activity for
+        default: 'octocat'
+
 jobs:
   analyze:
     name: Analyze Organization Activity
@@ -44,6 +48,7 @@ jobs:
           activity_days: ${{ github.event.inputs.activity_days }}
           debug: ${{ github.event.inputs.debug }}
           timezone: ${{ github.event.inputs.timezone }}
+          log_user: ${{ github.event.inputs.log_user }}
  
       - name: Attach Artifacts
         uses: actions/upload-artifact@v2
@@ -53,3 +58,4 @@ jobs:
             ${{ steps.analyze_org.outputs.report_csv }}
             ${{ steps.analyze_org.outputs.report_json }}
             ${{ steps.analyze_org.outputs.data_organization_user_activity }}
+            ${{ steps.analyze_org.outputs.issue_activity_log }}

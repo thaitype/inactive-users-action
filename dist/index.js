@@ -5,8 +5,9 @@ module.exports =
 /***/ 2932:
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
 
-// const github = require('@actions/github')
-//   , core = require('@actions/core')
+// @ts-check
+
+const { log } = __webpack_require__(7082);
 const fs = __webpack_require__(5747)
   , path = __webpack_require__(5622)
   , core = __webpack_require__(2186)
@@ -25,6 +26,7 @@ async function run() {
     , organization = getRequiredInput('organization')
     , maxRetries = getRequiredInput('octokit_max_retries')
     , timeZone = core.getInput('timezone') ?? 'Etc/UTC'
+    , logUser = core.getInput('log_user') ?? undefined
   ;
 
   let fromDate;
@@ -39,7 +41,7 @@ async function run() {
   await io.mkdirP(outputDir)
 
   const octokit = githubClient.create(token, maxRetries, timeZone)
-    , orgActivity = new OrganizationActivity(octokit)
+    , orgActivity = new OrganizationActivity(octokit, logUser)
   ;
 
   console.log(`Attempting to generate organization user activity data, this could take some time...`);
@@ -9406,6 +9408,7 @@ function wrappy (fn, cb) {
 /***/ 6166:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+const { Octokit } = __webpack_require__(5375);
 const Organization = __webpack_require__(2987)
   , RepositoryActivity = __webpack_require__(2490)
   , UserActivity = __webpack_require__(9245)
@@ -9414,9 +9417,14 @@ const Organization = __webpack_require__(2987)
 
 module.exports = class OrganizationUserActivity {
 
-  constructor(octokit) {
+  /**
+   * @param {Octokit} octokit 
+   * @param {string | undefined} logUser 
+   */
+  constructor(octokit, logUser) {
     this._organization = new Organization(octokit);
     this._repositoryActivity = new RepositoryActivity(octokit);
+    this._logUser = logUser;
   }
 
   get organizationClient() {
@@ -9436,7 +9444,7 @@ module.exports = class OrganizationUserActivity {
 
     const activityResults = {};
     for(let idx = 0; idx< repositories.length; idx++) {
-      const repoActivity = await self.repositoryClient.getActivity(repositories[idx], since);
+      const repoActivity = await self.repositoryClient.getActivity(repositories[idx], since, this._logUser);
       Object.assign(activityResults, repoActivity);
     }
 
@@ -9712,7 +9720,32 @@ module.exports = class CommitActivity {
 /***/ 3571:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
+const core = __webpack_require__(2186);
+const fs = __webpack_require__(5747)
+  , path = __webpack_require__(5622)
 const util = __webpack_require__(8087);
+
+/**
+ * Hotfix func to debug some user
+ * @param {string|undefined} logUser 
+ * @param {string|undefined} login 
+ * @param {any} issue 
+ * @returns 
+ */
+function logIssueActivity(logUser, login, issue) {
+  if (logUser === undefined) return;
+  if(logUser !== login) return;
+  console.log(`Log Issue ${issue.title} by ${login}`);
+  // TODO: Hard code to get outdir from github actions inputs
+  const outputDir = core.getInput('outputDir', {required: true});
+
+  const file = path.join(outputDir, 'issue_activity.log');
+  fs.appendFileSync(file, `${login} - ${issue.title}\n`);
+  fs.appendFileSync(file, `Issue: ${JSON.stringify(issue, null, 2)}`);
+
+   // Expose the output log user issue activity file
+   core.setOutput('issue_activity_log', file);
+}
 
 module.exports = class IssueActivity {
 
@@ -9723,7 +9756,7 @@ module.exports = class IssueActivity {
     this._octokit = octokit;
   }
 
-  getIssueActivityFrom(owner, repo, since) {
+  getIssueActivityFrom(owner, repo, since, logUser) {
     const from = util.getFromDate(since)
       , repoFullName = `${owner}/${repo}`
     ;
@@ -9741,6 +9774,8 @@ module.exports = class IssueActivity {
       issues.forEach(issue => {
         if (issue.user && issue.user.login) {
           const login = issue.user.login;
+
+          logIssueActivity(logUser, login, issue);
 
           if (!users[login]) {
             users[login] = 1;
@@ -9940,7 +9975,7 @@ module.exports = class RepositoryActivity {
     this._pullRequestActivity = new PullRequestActivity(octokit)
   }
 
-  async getActivity(repo, since) {
+  async getActivity(repo, since, logUser) {
     const owner = repo.owner
       , name = repo.name
       , fullName = repo.full_name
@@ -9957,7 +9992,7 @@ module.exports = class RepositoryActivity {
     const commits = await commitActivity.getCommitActivityFrom(owner, name, since);
     data[UserActivityAttributes.COMMITS] = commits[fullName];
 
-    const issues = await issueActivity.getIssueActivityFrom(owner, name, since)
+    const issues = await issueActivity.getIssueActivityFrom(owner, name, since, logUser)
     data[UserActivityAttributes.ISSUES] = issues[fullName];
 
     const issueComments = await issueActivity.getIssueCommentActivityFrom(owner, name, since);
@@ -10014,6 +10049,14 @@ const RetryThrottlingOctokit = Octokit.plugin(throttling, retry);
 
 //TODO could apply the API endpoint (i.e. support GHES)
 
+/**
+ * 
+ * @param {string} token 
+ * TODO: I don't sure maxRetries is a number or string
+ * @param {*} maxRetries 
+ * @param {string} timeZone 
+ * @returns {Octokit}
+ */
 module.exports.create = (token, maxRetries, timeZone) => {
   const MAX_RETRIES = maxRetries ? maxRetries : 3
 
@@ -10072,6 +10115,14 @@ module.exports = require("assert");;
 
 "use strict";
 module.exports = require("child_process");;
+
+/***/ }),
+
+/***/ 7082:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("console");;
 
 /***/ }),
 
